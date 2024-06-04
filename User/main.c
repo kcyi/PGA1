@@ -29,8 +29,8 @@
 	#define PWM_MODE1   0
 	#define PWM_MODE2   1
 	/* PWM Output Mode Selection */
-	//#define PWM_MODE PWM_MODE1
-	#define PWM_MODE PWM_MODE2
+	#define PWM_MODE PWM_MODE1
+	//#define PWM_MODE PWM_MODE2
 
 /* Global Variable */
 vu8 val;
@@ -88,7 +88,7 @@ void GPIO_Config(void) {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC, ENABLE);
 
 	// LED Output
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_5;// | GPIO_Pin_6;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_2;// | GPIO_Pin_6; // GPIO_Pin_0 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
@@ -148,18 +148,24 @@ void TIM1_PWMOut_Init(u16 arr, u16 psc, u16 ccp)
     TIM_OCInitTypeDef TIM_OCInitStructure={0};
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure={0};
 
-    RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOD | RCC_APB2Periph_TIM1, ENABLE );
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+
+    RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO , ENABLE );
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init( GPIOD, &GPIO_InitStructure );
+    GPIO_Init( GPIOC, &GPIO_InitStructure );
 
-    //RCC_APB2PeriphClockCmd( RCC_APB2Periph_TIM1, ENABLE );
+    // Remap PD5 to TIM2
+//	GPIO_PinRemapConfig(GPIO_FullRemap_TIM2, ENABLE);
+
+    RCC_APB1PeriphClockCmd( RCC_APB1Periph_TIM2, ENABLE );
+//    RCC_APB2PeriphClockCmd( RCC_APB2Periph_TIM1, ENABLE );
     TIM_TimeBaseInitStructure.TIM_Period = arr;
     TIM_TimeBaseInitStructure.TIM_Prescaler = psc;
     TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit( TIM1, &TIM_TimeBaseInitStructure);
+//    TIM_TimeBaseInit( TIM1, &TIM_TimeBaseInitStructure);
+    TIM_TimeBaseInit( TIM2, &TIM_TimeBaseInitStructure);
 
 #if (PWM_MODE == PWM_MODE1)
   TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
@@ -172,12 +178,18 @@ void TIM1_PWMOut_Init(u16 arr, u16 psc, u16 ccp)
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_Pulse = ccp;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OC1Init( TIM1, &TIM_OCInitStructure );
 
-    TIM_CtrlPWMOutputs(TIM1, ENABLE );
-    TIM_OC1PreloadConfig( TIM1, TIM_OCPreload_Disable );
-    TIM_ARRPreloadConfig( TIM1, ENABLE );
-    TIM_Cmd( TIM1, ENABLE );
+//    TIM_OC1Init( TIM1, &TIM_OCInitStructure );
+//    TIM_CtrlPWMOutputs(TIM1, ENABLE );
+//    TIM_OC1PreloadConfig( TIM1, TIM_OCPreload_Disable );
+//    TIM_ARRPreloadConfig( TIM1, ENABLE );
+//    TIM_Cmd( TIM1, ENABLE );
+
+    TIM_OC3Init( TIM2, &TIM_OCInitStructure );
+    TIM_CtrlPWMOutputs(TIM2, ENABLE );
+    TIM_OC3PreloadConfig( TIM2, TIM_OCPreload_Enable ); //TIM_OCPreload_Disable );
+    TIM_ARRPreloadConfig( TIM2, ENABLE );
+    TIM_Cmd( TIM2, ENABLE );
 }
 
 /*********************************************************************
@@ -201,12 +213,15 @@ int main(void) {
 
 //    USARTx_CFG();
 	GPIO_Config();
-	GPIO_ResetBits(GPIOD, GPIO_Pin_0 | GPIO_Pin_5);// | GPIO_Pin_6);
+	GPIO_SetBits(GPIOD, GPIO_Pin_6 | GPIO_Pin_2);
+//	GPIO_ResetBits(GPIOD, GPIO_Pin_0);// | GPIO_Pin_0);
 
 	u8 i = 0, j = 0, k = 0;
+	u8 ccp_lv;
 
-	Delay_Ms(500);
-	TIM1_PWMOut_Init(100, 480-1, 50);
+
+	Delay_Ms(25);
+	TIM1_PWMOut_Init(100, 4800-1, 0);
 
 	while (1) {
 
@@ -223,20 +238,32 @@ int main(void) {
 
 		Delay_Ms(100);
 
-		if (interruptFlag == 1) {
-			GPIO_WriteBit(GPIOD, GPIO_Pin_0, (i == 0) ? (i = Bit_SET) : (i = Bit_RESET));
+		if (interruptFlag == 1) { //LEVEL
+			//GPIO_WriteBit(GPIOD, GPIO_Pin_0, (i == 0) ? (i = Bit_SET) : (i = Bit_RESET));
+			ccp_lv = ccp_lv + 10;
+			if(ccp_lv > 100)
+				ccp_lv = 100;
+
+			TIM1_PWMOut_Init(100, 4800-1, ccp_lv);
+
 			interruptFlag = 0;
 		}
-		else if (interruptFlag == 2) {
-			GPIO_WriteBit(GPIOD, GPIO_Pin_5, (j == 0) ? (j = Bit_SET) : (j = Bit_RESET));
+		else if (interruptFlag == 2) { //LIGHT
+			GPIO_WriteBit(GPIOD, GPIO_Pin_6, (j == 0) ? (j = Bit_SET) : (j = Bit_RESET));
 			interruptFlag = 0;
 		}
-		else if (interruptFlag == 3) {
+		else if (interruptFlag == 3) { //NB
 			//GPIO_WriteBit(GPIOD, GPIO_Pin_6, (k == 0) ? (k = Bit_SET) : (k = Bit_RESET));
+			ccp_lv = ccp_lv - 10;
+			if(ccp_lv < 20)
+				ccp_lv = 20;
+
+			TIM1_PWMOut_Init(100, 4800-1, ccp_lv);
+
 			interruptFlag = 0;
 		}
 
-		//TIM1_PWMOut_Init(100, 24-1, 80);
+		//TIM1_PWMOut_Init(100, 480-1, 50);
 
 
 //      GPIO_ResetBits(GPIOD, GPIO_Pin_0);
