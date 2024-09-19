@@ -42,42 +42,8 @@ uint8_t interruptFlag = 0;
 uint8_t re_A, re_Atemp, re_B, re_Btemp;
 volatile uint32_t last_interrupt_time = 0;
 
-u32 timer_rotary = 0;
 int E_dir = 0;
 
-/*********************************************************************
- * @fn      USARTx_CFG
- *
- * @brief   Initializes the USART2 & USART3 peripheral.
- *
- * @return  none
- */
-//void USARTx_CFG(void)
-//{
-//    GPIO_InitTypeDef  GPIO_InitStructure = {0};
-//    USART_InitTypeDef USART_InitStructure = {0};
-//
-//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_USART1, ENABLE);
-//
-//    /* USART1 TX-->D.5   RX-->D.6 */
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-//    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-//    GPIO_Init(GPIOD, &GPIO_InitStructure);
-//    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-//    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-//    GPIO_Init(GPIOD, &GPIO_InitStructure);
-//
-//    USART_InitStructure.USART_BaudRate = 115200;
-//    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-//    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-//    USART_InitStructure.USART_Parity = USART_Parity_No;
-//    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-//    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
-//
-//    USART_Init(USART1, &USART_InitStructure);
-//    USART_Cmd(USART1, ENABLE);
-//}
 
 /*********************************************************************
  * @fn      GPIO_Config
@@ -480,195 +446,89 @@ int main(void) {
 	SystemCoreClockUpdate();
 	Delay_Init();
 
-//#if (SDI_PRINT == SDI_PR_OPEN)
-//    SDI_Printf_Enable();
-//#else
-//    USART_Printf_Init(115200);
-//#endif
-//    printf("SystemClk:%d\r\n",SystemCoreClock);
-//    printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
-
-//    USARTx_CFG();
-
 	GPIO_Config();
 
-	u8 i = 0, j = 0, k = 0;
-	u8 red = 0, blue = 30, green = 70;
-	u8 ccp_lv;
-	//u8 re_B = 0, re_Btemp = 0;
-
-
-
-	re_Atemp = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_5);
-	re_Btemp = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7);
-
-	//Delay_Ms(25);
-	//TIM1_PWMOut_Init(100, 4800-1, 0);
-//	PC0_T2CH3_PWMOut(100, 4800-1, 30); //motor 1
-//	PD6_T2CH3_LEDOut(100, 4800-1, 30); // blue
-//	PC0_T2CH3_PWMOut(100, 4800-1, 30); //motor 1
-//	PD3_T2CH2_PWMOut(100, 4800-1, 85); //motor 2
-//	PD2_T1CH1_PWMOut(100, 4800-1, 50); //motor 3
-//	PC6_T1CH1_LEDOut(100, 4800-1, 50); //red
-//	PD2_T1CH1_PWMOut(100, 4800-1, 50); //motor 3
-//	PC3_T1CH3_PWMOut(100, 4800-1, 75); //motor 4
-//	PD5_T2CH4_LEDOut(100, 4800-1, 50); //green
-
-//    I2C_PORTInit();
-//    OLED_Init();
-//
-//    SSD1306_CLearDisplay();
-//    //SSD1306_Clear();
-//    //OLED_SetCursor(0,0);
-//    //OLED_Print("HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO");
-//    //OLED_SetCursor(10,20);
-//    //OLED_Print("0123456789");
-//    //SSD1306_DrawChar("HELLO", 5, 2);
-//    //SSD1306_DrawLine(0, 0, 127, 63, 1);
-//    //SSD1306_DrawLine(127, 0, 0, 63, 1);
-//    SSD1306_DrawString(0, 0, "Hello", 1, 1); // 기본 크기
-//    SSD1306_DrawString(0, 30, "Calico", 3, 1); // 2배 크기
-//    //SSD1306_DrawString(0, 30, "0123456", 3, 1); // 2배 크기
-//    SSD1306_Display();
-//	PC6_T1CH1_RedOut(100, 4800-1, 20);
-
-
-
+	//u8 i = 0, j = 0, k = 0;
+	//u8 red = 0, blue = 30, green = 70;
+	int ccp_lv;
 
 	while (1) {
-//
-////      while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
-////      {
-////          /* waiting for receiving finish */
-////      }
-////      val = (USART_ReceiveData(USART1));
-////      USART_SendData(USART1, ~val);
-////      while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
-////      {
-////          /* waiting for sending finish */
-////      }
-//
-//		//GPIO_ResetBits(GPIOD, GPIO_Pin_0);
-//
+
 		Delay_Ms(10);
 
-		if(timer_rotary > 0)
-			timer_rotary--;
 
-		if (interruptFlag == 2) { //encoder interrupt A
+		if(interruptFlag == 1) {
+			PD5_T2CH4_GreenOut(100, 480-1, 0);
+			PC6_T1CH1_RedOut(100, 480-1, 0);
+			PD6_T2CH3_BlueOut(100, 480-1, 0);
 
-			//if(re_B == re_Btemp)
-			{
-				if(E_dir == 1)
-				{
-					ccp_lv++;
-					PD5_T2CH4_GreenOut(100, 480-1, 50);
-					PC6_T1CH1_RedOut(100, 480-1, 0);
-					PD6_T2CH3_BlueOut(100, 480-1, 0);
-				}
-			}
-
-			re_Atemp = re_A;
-			re_Btemp = re_B;
-
-			if(timer_rotary == 0)
-				timer_rotary = TIMER_INIT;
+			E_dir = 0;
+			ccp_lv = 0;
 
 			interruptFlag = 0;
 
+			PC0_T2CH3_PWMOut(50-1, 24-1, 0);
+			PD3_T2CH2_PWMOut(50-1, 24-1, 0); //motor 2
+			PD2_T1CH1_PWMOut(50-1, 24-1, 0); //motor 3
+			PC3_T1CH3_PWMOut(50-1, 24-1, 0); //motor 4
+
 		}
-		if (interruptFlag == 3) { //encoder interrupt B
+		else if (interruptFlag == 2) { //encoder interrupt A
 
-			//if(re_A == re_Atemp)
+			if(E_dir == 1) // CW
 			{
-				if(E_dir == 2)
-				{
-					ccp_lv++;
-					PD5_T2CH4_GreenOut(100, 480-1, 00);
-					PC6_T1CH1_RedOut(100, 480-1, 0);
-					PD6_T2CH3_BlueOut(100, 480-1, 50);
-				}
+				ccp_lv = ccp_lv + 10;
+
+				if(ccp_lv > 100)
+					ccp_lv = 100;
+				else if(ccp_lv < 0)
+					ccp_lv = 0;
+
+				//PD5_T2CH4_GreenOut(100, 480-1, 50);
+				//PC6_T1CH1_RedOut(100-1, 480-1, ccp_lv);
+				//PD6_T2CH3_BlueOut(100, 480-1, 0);
+
+				PC0_T2CH3_PWMOut(50-1, 24-1, ccp_lv/2);
+				PD3_T2CH2_PWMOut(50-1, 24-1, ccp_lv/2); //motor 2
+				PD2_T1CH1_PWMOut(50-1, 24-1, ccp_lv/2); //motor 3
+				PC3_T1CH3_PWMOut(50-1, 24-1, ccp_lv/2); //motor 4
 			}
-
-			re_Atemp = re_A;
-			re_Btemp = re_B;
-
-			if(timer_rotary == 0)
-				timer_rotary = TIMER_INIT;
+			else
+			{
+				//ccp_lv = 0;
+				E_dir = 0;
+			}
 
 			interruptFlag = 0;
 		}
+		else if (interruptFlag == 3) { //encoder interrupt B
 
-		interruptFlag = 0;
+			if(E_dir == 2) //CCW
+			{
+				ccp_lv = ccp_lv - 10;
 
+				if(ccp_lv > 100)
+					ccp_lv = 100;
+				else if(ccp_lv < 0)
+					ccp_lv = 0;
 
-//
-////			GPIO_WriteBit(GPIOD, GPIO_Pin_0, (i == 0) ? (i = Bit_SET) : (i = Bit_RESET));
-////			ccp_lv = ccp_lv + 10;
-////			if(ccp_lv > 100)
-////				ccp_lv = 100;
-////
-////			TIM1_PWMOut_Init(100, 4800-1, ccp_lv);
-//
-//			interruptFlag = 0;
-//		}
-//		else if (interruptFlag == 2) { //LIGHT
-////			GPIO_WriteBit(GPIOD, GPIO_Pin_6, (j == 0) ? (j = Bit_SET) : (j = Bit_RESET));
-//			GPIO_ResetBits(GPIOD, GPIO_Pin_0 | GPIO_Pin_5);
-//			GPIO_SetBits(GPIOD, GPIO_Pin_6);
-//
-//			GPIO_ResetBits(GPIOC, GPIO_Pin_4);
-//
-//			switch (i) {
-//			case 4:
-//				GPIO_ResetBits(GPIOC, GPIO_Pin_0); //motor 1
-//				i = 3;
-//				break;
-//			case 3:
-//				GPIO_ResetBits(GPIOD, GPIO_Pin_3); //motor 2
-//				i = 2;
-//				break;
-//			case 2:
-//				GPIO_ResetBits(GPIOD, GPIO_Pin_2); //motor 3
-//				i = 1;
-//				break;
-//			case 1:
-//				GPIO_ResetBits(GPIOC, GPIO_Pin_3); //motor 4
-//				i = 0;
-//				break;
-//			case 0:
-//				break;
-//			default :
-//				i = 0;
-//				break;
-//			}
-//
-//			interruptFlag = 0;
-//		}
-//		else if (interruptFlag == 3) { //NB
-//			GPIO_ResetBits(GPIOD, GPIO_Pin_0 | GPIO_Pin_6);
-//			GPIO_SetBits(GPIOD, GPIO_Pin_5);
-//
-//			GPIO_SetBits(GPIOC, GPIO_Pin_4);
-//
-////			GPIO_WriteBit(GPIOD, GPIO_Pin_6, (k == 0) ? (k = Bit_SET) : (k = Bit_RESET));
-////			ccp_lv = ccp_lv - 10;
-////			if(ccp_lv < 20)
-////				ccp_lv = 20;
-////
-////			TIM1_PWMOut_Init(100, 4800-1, ccp_lv);
-//
-//			interruptFlag = 0;
-//		}
+				//PD5_T2CH4_GreenOut(100, 480-1, 00);
+				//PC6_T1CH1_RedOut(100-1, 480-1, ccp_lv);
+				//PD6_T2CH3_BlueOut(100, 480-1, 50);
 
+				PC0_T2CH3_PWMOut(50-1, 24-1, ccp_lv/2);
+				PD3_T2CH2_PWMOut(50-1, 24-1, ccp_lv/2); //motor 2
+				PD2_T1CH1_PWMOut(50-1, 24-1, ccp_lv/2); //motor 3
+				PC3_T1CH3_PWMOut(50-1, 24-1, ccp_lv/2); //motor 4
+			}
+			else
+			{
+				//ccp_lv = 0;
+				E_dir = 0;
+			}
 
-		//TIM1_PWMOut_Init(100, 480-1, 50);
-
-
-//      GPIO_ResetBits(GPIOD, GPIO_Pin_0);
-//      GPIO_ResetBits(GPIOD, GPIO_Pin_5);
-//    	GPIO_WriteBit(GPIOD, GPIO_Pin_5|GPIO_Pin_6, (i == 0) ? (i = Bit_SET) : (i = Bit_RESET));
-
+			interruptFlag = 0;
+		}
 	}
 }
 
@@ -695,21 +555,17 @@ void EXTI7_0_IRQHandler(void) {
 			//EXTI_ClearITPendingBit(EXTI_Line0); /* Clear Flag */
 		}
 		if (EXTI_GetITStatus(EXTI_Line5) != RESET) { //Encoder A
-			//if(timer_rotary == 0)
+			if(E_dir == 0)
 				E_dir = 1;
 
 			interruptFlag = 2;
-			re_A = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_5);
-			re_B = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7);
 			//EXTI_ClearITPendingBit(EXTI_Line5); /* Clear Flag */
 		}
 		if (EXTI_GetITStatus(EXTI_Line7) != RESET) { //Encoder B
-			//if(timer_rotary == 0)
+			if(E_dir == 0)
 				E_dir = 2;
 
 			interruptFlag = 3;
-			re_A = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_5);
-			re_B = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7);
 			//EXTI_ClearITPendingBit(EXTI_Line5); /* Clear Flag */
 		}
 	}
