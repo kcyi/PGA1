@@ -23,7 +23,11 @@
  */
 
 #include "debug.h"
-//#include "SSD1306.h"
+#include <stdint.h>
+//#include "HT16K33_driver.h"
+//#include "grove_alphanumeric_display.h"
+
+#include "SSD1306.h"
 
 /* Global define */
 	/* PWM Output Mode Definition */
@@ -430,6 +434,168 @@ void PD3_T2CH2_PWMOut(u16 arr, u16 psc, u16 ccp)
 
 }
 
+/*********************************************************************
+ * @fn      ADC
+ *
+ * @brief   ADC Config for Temperature and Pressure Sensors
+ *
+ * @return  none
+ */
+
+uint16_t temp_sensor_value = 0;
+uint16_t pressure_sensor_value = 0;
+
+uint8_t adcFlag = 1;
+
+u16 TxBuf[10];
+
+void ADCConfig()
+//void ADCConfig(u8 channel)
+{
+	 ADC_InitTypeDef  ADC_InitStructure = {0};
+	 GPIO_InitTypeDef GPIO_InitStructure = {0};
+
+	 RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD , ENABLE);
+
+//	  switch (channel) {
+//	    case 0:  // PA2
+//	    case 1:  // PA1
+//	      RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+//	      break;
+//	    case 2:  // PC4
+//	      RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+//	      break;
+//	    case 3:  // PD2
+//	    case 4:  // PD3
+//	    case 5:  // PD5
+//	    case 6:  // PD6
+//	    case 7:  // PD4
+//	      RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+//	      break;
+//	    default:
+//	      break;
+//	  }
+
+	  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+	  RCC_ADCCLKConfig(RCC_PCLK2_Div8);
+
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+	  GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+	  GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+//	  switch (channel) {
+//	    case 0:  // PA2
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+//	      break;
+//	    case 1:  // PA1
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+//	      break;
+//	    case 2:  // PC4
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+//	      break;
+//	    case 3:  // PD2
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+//	      break;
+//	    case 4:  // PD3
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+//	      break;
+//	    case 5:  // PD5
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+//	      break;
+//	    case 6:  // PD6
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+//	      break;
+//	    case 7:  // PD4
+//	      GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+//	      break;
+//	    default:
+//	      break;
+//	  }
+
+//	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+
+//	  switch (channel) {
+//	    case 0:  // PA2
+//	    case 1:  // PA1
+//	      GPIO_Init(GPIOA, &GPIO_InitStructure);
+//	      break;
+//	    case 2:  // PC4
+//	      GPIO_Init(GPIOC, &GPIO_InitStructure);
+//	      break;
+//	    case 3:  // PD2
+//	    case 4:  // PD3
+//	    case 5:  // PD5
+//	    case 6:  // PD6
+//	    case 7:  // PD4
+//	      GPIO_Init(GPIOD, &GPIO_InitStructure);
+//	      break;
+//	    default:
+//	      break;
+//	  }
+
+	   ADC_DeInit(ADC1);
+	   ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
+	   ADC_InitStructure.ADC_ScanConvMode = DISABLE;
+	   ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+	   ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
+	   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+	   ADC_InitStructure.ADC_NbrOfChannel = 1;
+	   ADC_Init(ADC1, &ADC_InitStructure);
+
+	   ADC_Calibration_Vol(ADC1, ADC_CALVOL_50PERCENT);
+	   ADC_DMACmd(ADC1, ENABLE);
+	   ADC_Cmd(ADC1, ENABLE);
+
+	   ADC_ResetCalibration(ADC1);
+	   while(ADC_GetResetCalibrationStatus(ADC1));
+	   ADC_StartCalibration(ADC1);
+	   while(ADC_GetCalibrationStatus(ADC1));
+
+	   //s16 Calibrattion_Val = Get_CalibrationValue(ADC1); ????
+}
+
+u16 Get_ADC_Val(u8 channel)
+{
+  u16 val;
+  u8 rank;
+
+  if(channel == 2)
+	  rank = 1;
+  else
+	  rank = 1;
+
+
+  ADC_RegularChannelConfig(ADC1, channel, rank, ADC_SampleTime_241Cycles);
+  ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+
+  while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
+  val = ADC_GetConversionValue(ADC1);
+
+  //ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+
+  return val;
+}
+
+u16 Get_ADC_Average(u8 ch, u8 times)
+{
+  u32 temp_val = 0;
+  u8 t;
+  u16 val;
+
+  for (t = 0; t < times; t++)
+  {
+    temp_val += Get_ADC_Val(ch);
+    Delay_Ms(5);
+  }
+
+  val = temp_val / times;
+
+  return val;
+}
 
 /*********************************************************************
  * @fn      main
@@ -439,8 +605,6 @@ void PD3_T2CH2_PWMOut(u16 arr, u16 psc, u16 ccp)
  * @return  none
  */
 
-
-
 int main(void) {
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	SystemCoreClockUpdate();
@@ -448,14 +612,63 @@ int main(void) {
 
 	GPIO_Config();
 
-	//u8 i = 0, j = 0, k = 0;
-	//u8 red = 0, blue = 30, green = 70;
-	int ccp_lv;
+	//segment led
+    I2C_PORTInit();
+	OLED_Init();
+
+	SSD1306_CLearDisplay();
+	//SSD1306_Clear();
+	//OLED_SetCursor(0,0);
+	//OLED_Print("HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO   HELLO");
+	//OLED_SetCursor(10,20);
+	//OLED_Print("0123456789");
+	//SSD1306_DrawChar("HELLO", 5, 2);
+	//SSD1306_DrawLine(0, 0, 127, 63, 1);
+	//SSD1306_DrawLine(127, 0, 0, 63, 1);
+	SSD1306_DrawString(0, 0, "Calico PG1", 2, 1); // �⺻ ũ��
+//	SSD1306_DrawString(0, 16, "Lv 1 ", 2, 1); // 2�� ũ��
+//	SSD1306_DrawString(0, 33, "T 30deg", 2, 1); // 2�� ũ��
+//	SSD1306_DrawString(0, 50, "T 30deg", 2, 1); // 2�� ũ��
+	SSD1306_Display();
+
+
+	//adc
+	ADCConfig();
+
+//	ADC_RegularChannelConfig(ADC1, ADC_Channel_2, 1, ADC_SampleTime_241Cycles);
+//	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+//	Delay_Ms(50);
+//	ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+
+	uint8_t ccp_lv;
+	char buffer_level[16];
+	char buffer_pressure[16];
+	char buffer_temperature[16];
+
 
 	while (1) {
 
 		Delay_Ms(10);
 
+		pressure_sensor_value = Get_ADC_Val(ADC_Channel_7);
+		pressure_sensor_value = 0.995*(pressure_sensor_value * 325)/100;
+
+		// snprintf(buffer_pressure, sizeof(buffer_pressure), "P: %u", pressure_sensor_value);
+		// SSD1306_DrawString(0, 33, buffer_pressure, 2, 1); // 2�� ũ��
+		// SSD1306_Display();
+
+		temp_sensor_value = Get_ADC_Val(ADC_Channel_2);
+		temp_sensor_value = 0.995*(temp_sensor_value * 325)/100; // Converting to real voltage w.r.t. VCC 3.3V, 0.985 multiplier factor is used with 3.3V for calibration. 330 * 0.985 = 325. This was as per my board, you might need to do it with different multiplier value.
+
+		// snprintf(buffer_temperature, sizeof(buffer_temperature), "T: %u", temp_sensor_value);
+		// SSD1306_DrawString(0, 50, buffer_temperature, 2, 1); // 2�� ũ��
+		// SSD1306_Display();
+
+//		PD5_T2CH4_GreenOut(100, 480-1, 100);
+//		PC6_T1CH1_RedOut(100, 480-1, 100);
+//		PD6_T2CH3_BlueOut(100, 480-1, 100);
+
+		//PC6_T1CH1_RedOut(100, 480-1, 0);
 
 		if(interruptFlag == 1) {
 			PD5_T2CH4_GreenOut(100, 480-1, 0);
@@ -477,7 +690,7 @@ int main(void) {
 
 			if(E_dir == 1) // CW
 			{
-				ccp_lv = ccp_lv + 10;
+				ccp_lv = ccp_lv + 1;
 
 				if(ccp_lv > 100)
 					ccp_lv = 100;
@@ -487,6 +700,10 @@ int main(void) {
 				//PD5_T2CH4_GreenOut(100, 480-1, 50);
 				//PC6_T1CH1_RedOut(100-1, 480-1, ccp_lv);
 				//PD6_T2CH3_BlueOut(100, 480-1, 0);
+
+				snprintf(buffer_level, sizeof(buffer_level), "Lv: %4d", ccp_lv);
+				SSD1306_DrawString(0, 16, buffer_level, 2, 1);
+				SSD1306_Display();
 
 				PC0_T2CH3_PWMOut(50-1, 24-1, ccp_lv/2);
 				PD3_T2CH2_PWMOut(50-1, 24-1, ccp_lv/2); //motor 2
@@ -505,12 +722,16 @@ int main(void) {
 
 			if(E_dir == 2) //CCW
 			{
-				ccp_lv = ccp_lv - 10;
+				ccp_lv = ccp_lv - 1;
 
 				if(ccp_lv > 100)
 					ccp_lv = 100;
 				else if(ccp_lv < 0)
 					ccp_lv = 0;
+
+				snprintf(buffer_level, sizeof(buffer_level), "Lv: %4d", ccp_lv);
+				SSD1306_DrawString(0, 16, buffer_level, 2, 1);
+				SSD1306_Display();
 
 				//PD5_T2CH4_GreenOut(100, 480-1, 00);
 				//PC6_T1CH1_RedOut(100-1, 480-1, ccp_lv);
